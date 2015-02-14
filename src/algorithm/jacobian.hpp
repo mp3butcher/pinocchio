@@ -4,18 +4,18 @@
 #include "pinocchio/multibody/visitor.hpp"
 #include "pinocchio/multibody/model.hpp"
 #include <iostream>
- 
+
 namespace se3
 {
   // inline const Eigen::MatrixXd&
-  // jacobian(const Model & model, 
+  // jacobian(const Model & model,
   // 	   Data& data,
   // 	   const Eigen::VectorXd & q);
 
-} // namespace se3 
+} // namespace se3
 
 /* --- Details -------------------------------------------------------------------- */
-namespace se3 
+namespace se3
 {
   struct JacobiansForwardStep : public fusion::JointVisitor<JacobiansForwardStep>
   {
@@ -40,7 +40,7 @@ namespace se3
       const Model::Index & parent = model.parents[i];
 
       jmodel.calc(jdata.derived(),q);
-      
+
       data.liMi[i] = model.jointPlacements[i]*jdata.M();
       if(parent>0) data.oMi[i] = data.oMi[parent]*data.liMi[i];
       else         data.oMi[i] = data.liMi[i];
@@ -64,7 +64,7 @@ namespace se3
     return data.J;
   }
 
-  /* Return the jacobian of the output frame attached to joint <jointId> in the
+  /** Return the jacobian of the output frame attached to joint <jointId> in the
      world frame or in the local frame depending on the template argument. The
      function computeJacobians should have been called first. */
   template<bool localFrame>
@@ -107,7 +107,7 @@ namespace se3
       const Model::Index & parent = model.parents[i];
 
       jmodel.calc(jdata.derived(),q);
-      
+
       data.liMi[i] = model.jointPlacements[i]*jdata.M();
       data.iMf[parent] = data.liMi[i]*data.iMf[i];
 
@@ -116,7 +116,7 @@ namespace se3
 
   };
 
-  /* Compute the jacobian of the output frame of the joint <idx> in the local frame. */
+  /** Compute the jacobian of the output frame of the joint <idx> in the local frame. */
   const Eigen::MatrixXd&
   jacobian(const Model & model, Data& data,
 	   const Eigen::VectorXd & q,

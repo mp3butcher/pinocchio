@@ -7,45 +7,6 @@
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
 #include <boost/variant.hpp>
-
-namespace se3
-{
-  template<class C> struct traits {};
-
-  /* RNEA operations
-   *
-   * *** FORWARD ***
-   * J::calc(q,vq)
-   * SE3    = SE3 * J::SE3
-   * Motion = J::Motion
-   * Motion = J::Constraint*J::JointMotion + J::Bias + Motion^J::Motion
-   * Force  = Inertia*Motion  + Inertia.vxiv(Motion)
-   *
-   * *** BACKWARD *** 
-   * J::JointForce = J::Constraint::Transpose*J::Force
-   */
-
-  /* CRBA operations
-   *
-   * *** FORWARD ***
-   * J::calc(q)
-   * Inertia = Inertia
-   *
-   * *** BACKWARD *** 
-   * Inertia += SE3::act(Inertia)
-   * F = Inertia*J::Constraint
-   * JointInertia.block = J::Constraint::Transpose*F
-   * *** *** INNER ***
-   *     F = SE3::act(f)
-   *     JointInertia::block = J::Constraint::Transpose*F
-   */
-
-  /* Jacobian operations
-   *
-   * internal::ActionReturn<Constraint>::Type
-   * Constraint::se3Action
-   */
-
 #define SE3_JOINT_TYPEDEF					     \
   typedef int Index;						     \
   typedef typename traits<Joint>::JointData JointData;		     \
@@ -65,67 +26,184 @@ namespace se3
     using Base::idx_q; \
     using Base::idx_v
 
-  template<typename _JointData>
-  struct JointDataBase
-  {
+namespace se3
+{
+template<class C> struct traits {};
+
+
+
+template<typename _JointData>
+struct JointDataBase
+{
+
     typedef typename traits<_JointData>::Joint Joint;
     SE3_JOINT_TYPEDEF;
-
-    JointData& derived() { return *static_cast<JointData*>(this); }
-    const JointData& derived() const { return *static_cast<const JointData*>(this); }
-
-    const Constraint_t     & S() const  { return static_cast<const JointData*>(this)->S;   }
-    const Transformation_t & M() const  { return static_cast<const JointData*>(this)->M;   }
-    const Motion_t         & v() const  { return static_cast<const JointData*>(this)->v;   }
-    const Bias_t           & c() const  { return static_cast<const JointData*>(this)->c;   }
-    F_t& F()        { return static_cast<      JointData*>(this)->F; }
-  };
-
-  template<typename _JointModel>
-  struct JointModelBase
-  {
+    /// @brief derived
+    JointData& derived()
+    {
+        return *static_cast<JointData*>(this);
+    }
+    /// @brief derived
+    const JointData& derived() const
+    {
+        return *static_cast<const JointData*>(this);
+    }
+    /// @brief S
+    const Constraint_t     & S() const
+    {
+        return static_cast<const JointData*>(this)->S;
+    }
+    /// @brief M
+    const Transformation_t & M() const
+    {
+        return static_cast<const JointData*>(this)->M;
+    }
+    /// @brief v
+    const Motion_t         & v() const
+    {
+        return static_cast<const JointData*>(this)->v;
+    }
+    /// @brief c
+    const Bias_t           & c() const
+    {
+        return static_cast<const JointData*>(this)->c;
+    }
+    /// @brief F
+    F_t& F()
+    {
+        return static_cast<      JointData*>(this)->F;
+    }
+};
+/** @brief JointModelBase
+*  @details  RNEA operations \n
+*
+* *** FORWARD *** \n
+* J::calc(q,vq) \n
+* SE3    = SE3 * J::SE3 \n
+* Motion = J::Motion \n
+* Motion = J::Constraint*J::JointMotion + J::Bias + Motion^J::Motion \n
+* Force  = Inertia*Motion  + Inertia.vxiv(Motion) \n
+* \n
+* *** BACKWARD ***  \n
+* J::JointForce = J::Constraint::Transpose*J::Force \n
+*  \n
+* CRBA operations \n
+* \n
+* *** FORWARD *** \n
+* J::calc(q) \n
+* Inertia = Inertia \n
+* \n
+* *** BACKWARD ***  \n
+* Inertia += SE3::act(Inertia) \n
+* F = Inertia*J::Constraint \n
+* JointInertia.block = J::Constraint::Transpose*F \n
+* *** *** INNER *** \n
+*     F = SE3::act(f)
+*     JointInertia::block = J::Constraint::Transpose*F \n
+*  \n
+* Jacobian operations \n
+*
+* internal::ActionReturn<Constraint>::Type \n
+* Constraint::se3Action \n
+**/
+template<typename _JointModel>
+struct JointModelBase
+{
     typedef typename traits<_JointModel>::Joint Joint;
     SE3_JOINT_TYPEDEF;
+    /// @brief derived
+    JointModel& derived()
+    {
+        return *static_cast<JointModel*>(this);
+    }
+    /// @brief derived
+    const JointModel& derived() const
+    {
+        return *static_cast<const JointModel*>(this);
+    }
+    /// @brief createData
+    JointData createData() const
+    {
+        return static_cast<const JointModel*>(this)->createData();
+    }
+    /// @brief calc
+    void calc( JointData& data,
+               const Eigen::VectorXd & qs ) const
+    {
+        return static_cast<const JointModel*>(this)->calc(data,qs);
+    }
+    /// @brief calc
+    void calc( JointData& data,
+               const Eigen::VectorXd & qs,
+               const Eigen::VectorXd & vs ) const
+    {
+        return static_cast<const JointModel*>(this)->calc(data,qs,vs);
+    }
 
-    JointModel& derived() { return *static_cast<JointModel*>(this); }
-    const JointModel& derived() const { return *static_cast<const JointModel*>(this); }
+private:
+    Index i_id; /// ID of the joint in the multibody list.
+    int i_q;    /// Index of the joint configuration in the joint configuration vector.
+    int i_v;    /// Index of the joint velocity in the joint velocity vector.
 
-    JointData createData() const { return static_cast<const JointModel*>(this)->createData(); }
-    void calc( JointData& data, 
-	       const Eigen::VectorXd & qs ) const
-    { return static_cast<const JointModel*>(this)->calc(data,qs); }
-    void calc( JointData& data, 
-	       const Eigen::VectorXd & qs, 
-	       const Eigen::VectorXd & vs ) const
-    { return static_cast<const JointModel*>(this)->calc(data,qs,vs); }
-
-  private:
-    Index i_id; // ID of the joint in the multibody list.
-    int i_q;    // Index of the joint configuration in the joint configuration vector.
-    int i_v;    // Index of the joint velocity in the joint velocity vector.
-
-  public:
-          int     nv()    const { return NV; }
-          int     nq()    const { return NQ; }
-    const int &   idx_q() const { return i_q; }
-    const int &   idx_v() const { return i_v; }
-    const Index & id()    const { return i_id; }
-
-    void setIndexes(Index id,int q,int v) { i_id = id, i_q = q; i_v = v; }
+public:
+    /// @brief NV
+    int     nv()    const
+    {
+        return NV;
+    }
+    /// @brief NQ
+    int     nq()    const
+    {
+        return NQ;
+    }
+    /// Index of the joint configuration in the joint configuration vector.
+    const int &   idx_q() const
+    {
+        return i_q;
+    }
+    /// Index of the joint velocity in the joint velocity vector.
+    const int &   idx_v() const
+    {
+        return i_v;
+    }
+    /// ID of the joint in the multibody list.
+    const Index & id()    const
+    {
+        return i_id;
+    }
+    /// @brief set Index of the joint configuration and velocity of joint id.
+    /// @arg id : index of the joint
+    /// @arg q : index of the joint configuration
+    /// @arg v : index of the joint velocity
+    void setIndexes(Index id,int q,int v)
+    {
+        i_id = id, i_q = q;
+        i_v = v;
+    }
 
     template<typename D>
-    typename D::template ConstFixedSegmentReturnType<NV>::Type jointMotion(const Eigen::MatrixBase<D>& a) const     { return a.template segment<NV>(i_v); }
+    typename D::template ConstFixedSegmentReturnType<NV>::Type jointMotion(const Eigen::MatrixBase<D>& a) const
+    {
+        return a.template segment<NV>(i_v);
+    }
     template<typename D>
-    typename D::template FixedSegmentReturnType<NV>::Type jointMotion(Eigen::MatrixBase<D>& a) const 
-    { return a.template segment<NV>(i_v); }
+    typename D::template FixedSegmentReturnType<NV>::Type jointMotion(Eigen::MatrixBase<D>& a) const
+    {
+        return a.template segment<NV>(i_v);
+    }
     template<typename D>
-    typename D::template ConstFixedSegmentReturnType<NV>::Type jointForce(const Eigen::MatrixBase<D>& tau) const 
-    { return tau.template segment<NV>(i_v); }
+    typename D::template ConstFixedSegmentReturnType<NV>::Type jointForce(const Eigen::MatrixBase<D>& tau) const
+    {
+        return tau.template segment<NV>(i_v);
+    }
     template<typename D>
-    typename D::template FixedSegmentReturnType<NV>::Type jointForce(Eigen::MatrixBase<D>& tau) const 
-    { return tau.template segment<NV>(i_v); }
-  };
+    typename D::template FixedSegmentReturnType<NV>::Type jointForce(Eigen::MatrixBase<D>& tau) const
+    {
+        return tau.template segment<NV>(i_v);
+    }
+};
 
 } // namespace se3
 
 #endif // ifndef __se3_joint_base_hpp__
+
