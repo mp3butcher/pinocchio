@@ -76,7 +76,7 @@ public:
     typedef Eigen::Matrix<double,3,Eigen::Dynamic> Matrix3x;
 
 public:
-    ///refrence to model
+    ///reference to model
     const Model& model;
     /// JointDataVector
     JointDataVector joints;

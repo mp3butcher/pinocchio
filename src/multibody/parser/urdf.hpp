@@ -22,7 +22,7 @@ namespace se3
 {
   namespace urdf
   {
-  
+
     Inertia convertFromUrdf( const ::urdf::Inertial& Y )
     {
       const ::urdf::Vector3 & p = Y.origin.position;
@@ -68,7 +68,7 @@ namespace se3
       // if(joint)
       //   std::cout << "#" << link->parent_joint->name << std::endl;
       // else std::cout << "###ROOT" << std::endl;
- 
+
       //assert(link->inertial && "The parser cannot accept trivial mass");
       const Inertia & Y = (link->inertial) ?
 	convertFromUrdf(*link->inertial)
@@ -84,7 +84,7 @@ namespace se3
 	      // This is a bypass to be corrected later. TODO
 
 
-	  Model::Index parent 
+	  Model::Index parent
 	    = (link->getParent()->parent_joint==NULL) ?
 	    (freeFlyer ? 1 : 0)
 	    : model.getBodyId( link->getParent()->parent_joint->name );
@@ -143,15 +143,14 @@ namespace se3
 	{
 	  parseTree( child,model,freeFlyer );
 	}
-    }  
+    }
 
-    Model buildModel( const std::string & filename, bool freeFlyer = false )
+    void buildModel(Model &inoutmodel, const std::string & filename, bool freeFlyer = false )
     {
-      Model model;
 
       ::urdf::ModelInterfacePtr urdfTree = ::urdf::parseURDFFile (filename);
-      parseTree(urdfTree->getRoot(),model,freeFlyer);
-      return model;
+      parseTree(urdfTree->getRoot(),inoutmodel,freeFlyer);
+    //  return model;
     }
 
   } // namespace urdf

@@ -16,7 +16,11 @@ namespace se3
 
 /* --- Details -------------------------------------------------------------------- */
 namespace se3
-{
+{ /**@description:Calling computeJacobians then getJacobian, return the result. Attention: the
+		function computes indeed all the jacobians of the model, even if just outputing
+		the demanded one. It is therefore outrageously costly wrt a dedicated
+		call. Function to be used only for prototyping.
+		*/
   struct JacobiansForwardStep : public fusion::JointVisitor<JacobiansForwardStep>
   {
     typedef boost::fusion::vector< const se3::Model&,

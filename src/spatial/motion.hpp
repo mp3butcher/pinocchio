@@ -8,6 +8,7 @@
 
 namespace se3
 {
+  ///Motion vectors, in se3* == F^6.\n
   template<typename _Scalar, int _Options>
   class MotionTpl
   {
@@ -25,13 +26,15 @@ namespace se3
   public:
     // Constructors
     MotionTpl() : m_w(), m_v() {}
+    ///Initialize from linear and angular components (dont mix the order).
     template<typename v1,typename v2>
     MotionTpl(const Eigen::MatrixBase<v1> & v, const Eigen::MatrixBase<v2> & w)
       : m_w(w), m_v(v) {}
+    ///Init from vector 6 [f,n]
     template<typename v6>
     explicit MotionTpl(const Eigen::MatrixBase<v6> & v)
       : m_w(v.template segment<3>(ANGULAR))
-      , m_v(v.template segment<3>(LINEAR)) 
+      , m_v(v.template segment<3>(LINEAR))
     {
       EIGEN_STATIC_ASSERT_VECTOR_ONLY(v6);
       assert( v.size() == 6 );
@@ -67,7 +70,7 @@ namespace se3
       m_v = other.linear ();
       return *this;
     }
-    
+
     template<typename V6>
     MotionTpl & operator=(const Eigen::MatrixBase<V6> & v)
     {

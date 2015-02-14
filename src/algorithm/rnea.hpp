@@ -3,7 +3,7 @@
 
 #include "pinocchio/multibody/visitor.hpp"
 #include "pinocchio/multibody/model.hpp"
-  
+
 namespace se3
 {
   inline const Eigen::VectorXd&
@@ -12,11 +12,16 @@ namespace se3
        const Eigen::VectorXd & v,
        const Eigen::VectorXd & a);
 
-} // namespace se3 
+} // namespace se3
 
 /* --- Details -------------------------------------------------------------------- */
-namespace se3 
+namespace se3
 {
+  /**@brief:Compute the RNEA, put the result in Data and return it.
+  *@description:
+  *              Configuration q (size Model::nq)\n
+  *              Velocity qdot (size Model::nv)\n
+  *              Acceleration qddot (size Model::nv)\n*/
   struct RneaForwardStep : public fusion::JointVisitor<RneaForwardStep>
   {
     typedef boost::fusion::vector< const se3::Model&,
@@ -41,18 +46,18 @@ namespace se3
     {
       using namespace Eigen;
       using namespace se3;
-      
+
       jmodel.calc(jdata.derived(),q,v);
-      
+
       const Model::Index & parent = model.parents[i];
       data.liMi[i] = model.jointPlacements[i]*jdata.M();
-      
+
       data.v[i] = jdata.v();
       if(parent>0) data.v[i] += data.liMi[i].actInv(data.v[parent]);
-      
-      data.a[i]  = jdata.S()*jmodel.jointMotion(a) + jdata.c() + (data.v[i] ^ jdata.v()) ; 
+
+      data.a[i]  = jdata.S()*jmodel.jointMotion(a) + jdata.c() + (data.v[i] ^ jdata.v()) ;
       data.a[i] += data.liMi[i].actInv(data.a[parent]);
-      
+
       data.f[i] = model.inertias[i]*data.a[i] + model.inertias[i].vxiv(data.v[i]); // -f_ext
       return 0;
     }
@@ -64,7 +69,7 @@ namespace se3
     typedef boost::fusion::vector<const Model&,
 				  Data&,
 				  const int &>  ArgsType;
-    
+
     JOINT_VISITOR_INIT(RneaBackwardStep);
 
     template<typename JointModel>
@@ -74,7 +79,7 @@ namespace se3
 		     Data& data,
 		     int i)
     {
-      const Model::Index & parent  = model.parents[i];      
+      const Model::Index & parent  = model.parents[i];
       jmodel.jointForce(data.tau)  = jdata.S().transpose()*data.f[i];
       if(parent>0) data.f[parent] += data.liMi[i].act(data.f[i]);
     }
@@ -94,7 +99,7 @@ namespace se3
 	RneaForwardStep::run(model.joints[i],data.joints[i],
 			     RneaForwardStep::ArgsType(model,data,i,q,v,a));
       }
-    
+
     for( int i=model.nbody-1;i>0;--i )
       {
 	RneaBackwardStep::run(model.joints[i],data.joints[i],

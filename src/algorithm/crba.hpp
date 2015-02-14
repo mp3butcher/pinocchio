@@ -6,18 +6,22 @@
 #include "pinocchio/spatial/act-on-set.hpp"
 
 #include <iostream>
-  
+
 namespace se3
 {
   inline const Eigen::MatrixXd&
   crba(const Model & model, Data& data,
        const Eigen::VectorXd & q);
 
-} // namespace se3 
+} // namespace se3
 
 /* --- Details -------------------------------------------------------------------- */
-namespace se3 
+namespace se3
 {
+ /**@brief:	Compute CRBA, put the result in Data and return it.
+  *@description:
+  *              Configuration q (size Model::nq)\n
+  */
   struct CrbaForwardStep : public fusion::JointVisitor<CrbaForwardStep>
   {
     typedef boost::fusion::vector< const se3::Model&,
@@ -39,7 +43,7 @@ namespace se3
 
       const typename JointModel::Index & i = jmodel.id();
       jmodel.calc(jdata.derived(),q);
-      
+
       data.liMi[i] = model.jointPlacements[i]*jdata.M();
       data.Ycrb[i] = model.inertias[i];
     }
@@ -50,7 +54,7 @@ namespace se3
   {
     typedef boost::fusion::vector<const Model&,
 				  Data&>  ArgsType;
-    
+
     JOINT_VISITOR_INIT(CrbaBackwardStep);
 
     template<typename JointModel>
@@ -62,7 +66,7 @@ namespace se3
       /*
        * F[1:6,i] = Y*S
        * M[i,SUBTREE] = S'*F[1:6,SUBTREE]
-       * if li>0 
+       * if li>0
        *   Yli += liXi Yi
        *   F[1:6,SUBTREE] = liXi F[1:6,SUBTREE]
        */
@@ -72,11 +76,11 @@ namespace se3
       data.Fcrb[i].block<6,JointModel::NV>(0,jmodel.idx_v()) = data.Ycrb[i] * jdata.S();
 
       /* M[i,SUBTREE] = S'*F[1:6,SUBTREE] */
-      data.M.block(jmodel.idx_v(),jmodel.idx_v(),jmodel.nv(),data.nvSubtree[i]) 
+      data.M.block(jmodel.idx_v(),jmodel.idx_v(),jmodel.nv(),data.nvSubtree[i])
 	= jdata.S().transpose()*data.Fcrb[i].block(0,jmodel.idx_v(),6,data.nvSubtree[i]);
 
       const Model::Index & parent   = model.parents[i];
-      if(parent>0) 
+      if(parent>0)
 	{
 	  /*   Yli += liXi Yi */
  	  data.Ycrb[parent] += data.liMi[i].act(data.Ycrb[i]);
@@ -88,7 +92,7 @@ namespace se3
 			      data.Fcrb[i].block(0,jmodel.idx_v(),6,data.nvSubtree[i]),
 			      jF);
 	}
-      
+
       // std::cout << "iYi = " << (Inertia::Matrix6)data.Ycrb[i] << std::endl;
       // std::cout << "iSi = " << ConstraintXd(jdata.S()).matrix() << std::endl;
       // std::cout << "liFi = " << jdata.F() << std::endl;
@@ -105,7 +109,7 @@ namespace se3
 	CrbaForwardStep::run(model.joints[i],data.joints[i],
 			     CrbaForwardStep::ArgsType(model,data,q));
       }
-    
+
     for( int i=model.nbody-1;i>0;--i )
       {
 	CrbaBackwardStep::run(model.joints[i],data.joints[i],

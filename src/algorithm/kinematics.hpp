@@ -3,18 +3,24 @@
 
 #include "pinocchio/multibody/visitor.hpp"
 #include "pinocchio/multibody/model.hpp"
-  
+
 namespace se3
 {
   inline void kinematics(const Model & model,
 			 Data& data,
 			 const Eigen::VectorXd & q,
 			 const Eigen::VectorXd & v);
-} // namespace se3 
+} // namespace se3
 
 /* --- Details -------------------------------------------------------------------- */
-namespace se3 
+namespace se3
 {
+  /**@brief: Compute the placements and spatial velocities of all the frames of the kinematic
+  *		tree and put the results in data.;
+  *@description:
+  *              Configuration q (size Model::nq)\n
+  *              Velocity qdot (size Model::nv)\n
+  */
   struct KinematicsStep : public fusion::JointVisitor<KinematicsStep>
   {
     typedef boost::fusion::vector< const se3::Model&,
@@ -37,15 +43,15 @@ namespace se3
     {
       using namespace Eigen;
       using namespace se3;
-      
+
       jmodel.calc(jdata.derived(),q,v);
-      
+
       const Model::Index & parent = model.parents[i];
       data.liMi[i] = model.jointPlacements[i]*jdata.M();
-      
+
       if(parent>0) data.oMi[i] = data.oMi[parent]*data.liMi[i];
       else         data.oMi[i] = data.liMi[i];
-      
+
       data.v[i] = jdata.v();
       if(parent>0) data.v[i] += data.liMi[i].actInv(data.v[parent]);
     }
