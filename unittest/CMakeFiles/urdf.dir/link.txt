@@ -1,0 +1,1 @@
+/usr/bin/c++     -pedantic -Wno-long-long -Wall -Wextra -Wcast-align -Wcast-qual -Wformat -Wwrite-strings -Wconversion     -lurdfdom_sensor -lurdfdom_model_state -lurdfdom_model -lurdfdom_world -lconsole_bridge CMakeFiles/urdf.dir/urdf.cpp.o  -o urdf -rdynamic -lurdfdom_sensor -lurdfdom_model_state -lurdfdom_model -lurdfdom_world -lconsole_bridge 
